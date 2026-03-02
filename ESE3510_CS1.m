@@ -41,10 +41,11 @@ end
 
 %% 3. Gain array, Summation for total equilizer
 
-% Note: guard bands are left as entirely passive (gain always 1) 
+% Note: guard bands are left as entirely passive (gain always 1)
+% Another note: presets tuned for processing given audio files (SEE PART 6)
 gains_unity = [1,  1,1,1,1,1,  1]; % flat
-gains_bass_boost = [1,  4,2,1,1,1,  1]; % lowest freq bands boosted
-gains_treble_boost = [1,  1,1,1,2,4,  1];  % highest freq bands boosted
+gains_bass_boost = [1,  4,2,0.8,1,1,  1]; % lowest freq bands boosted
+gains_treble_boost = [1,  1,1,0.8,1.6,4,  1];  % highest freq bands boosted 
 
 % "blank" transfer function. 0/1 = 0, but it's formatted as a transfer function object
 H_total_unity = tf(0, 1);
@@ -57,6 +58,18 @@ for i = 1:length(fc)
     H_total_bass = H_total_bass + (gains_bass_boost(i) * filters{i});
     H_total_treble = H_total_treble + (gains_treble_boost(i) * filters{i});
 end
+
+% Measure peak magnitude of the unity system across audible range
+fNorm = logspace(log10(20), log10(20000), 5000);
+wNorm = 2 * pi * fNorm;
+[magUnity, ~] = bode(H_total_unity, wNorm);
+magUnity = squeeze(magUnity);
+unity_peak = max(magUnity);  % linear peak gain
+
+% Apply inverse scalar to all presets so unity peaks at 0 dB (gain = 1; normalized)
+H_total_unity = H_total_unity * (1 / unity_peak);
+H_total_bass = H_total_bass * (1 / unity_peak);
+H_total_treble = H_total_treble * (1 / unity_peak);
 
 allTotal = [H_total_unity, H_total_bass, H_total_treble]; % For analysis
 allName = {'Unity', 'Bass', 'Treble'};
@@ -72,7 +85,7 @@ for i = 1:length(fc)
     bode(filters{i});
 end
 
-% total system response with unity gain 
+% Total system response with unity gain 
 bode(H_total_unity, '--');
 
 title('Frequency Response: Individual Bands and Unity');
@@ -80,6 +93,8 @@ legend([num2str(fc(1)), ' Hz (passive)'], [num2str(fc(2)), ' Hz'], [num2str(fc(3
        [num2str(fc(4)), ' Hz'], [num2str(fc(5)), ' Hz'], [num2str(fc(6)), ' Hz'], ...
        [num2str(fc(7)), ' Hz (passive)'], 'Total System (Unity)')
 hold off;
+% Adjust y-limits
+axes_handles = findall(gcf, 'type', 'axes'); axes(axes_handles(3)); ylim([-120, 10]); 
 
 % FIGURE 2: comparing 3 presets (unity, bass boost, treble boost)
 
@@ -145,7 +160,111 @@ for i = 1:length(fc)
     ylabel('Amplitude');
 end
 
+%% 6: Processing audio files w/ presets
 
-% what's next is to load the audio file 
+% Load audio files
+[x_giant_steps, fs_giant_steps] = audioread("Wavs\Giant Steps Bass Cut.wav");
+[x_space_station, fs_space_station] = audioread("Wavs\Space Station - Treble Cut.wav");
 
-% like [x, fs] = audioread()
+% (A) Giant Steps (bass cut) --> bass boost preset
+[num, den] = tfdata(H_total_bass, 'v'); % Get numerator/denominator
+tAudioGS = (0:length(x_giant_steps)-1)' / fs_giant_steps; % Time vector
+% Process w/ lsim
+y_giant_stepsL = lsim(num, den, x_giant_steps(:, 1), tAudioGS); 
+y_giant_stepsR = lsim(num, den, x_giant_steps(:, 2), tAudioGS); 
+y_giant_steps = [y_giant_stepsL, y_giant_stepsR];
+
+% Extract averaged (mono) audio signal for plotting
+x_giant_steps_MONO = (x_giant_steps(:, 1) + x_giant_steps(:, 2))/2;
+y_giant_steps_MONO = (y_giant_steps(:, 1) + y_giant_steps(:, 2))/2;
+
+% Get FT transform (for the first second)
+x_giant_steps_SNIP = x_giant_steps_MONO(1:fs_giant_steps);
+y_giant_steps_SNIP = y_giant_steps_MONO(1:fs_giant_steps);
+N = length(x_giant_steps_SNIP); 
+fGS = (0:floor(N/2))' * fs_giant_steps/N; % Extract only half (other half redundant)
+xFS_giant_steps = fft(x_giant_steps_SNIP); yFS_giant_steps = fft(y_giant_steps_SNIP);
+
+% Plot waveforms
+figure('Name', 'Original vs Bass-Boosted Waveforms + FFT of Giant Steps')
+% Averaged (mono) processed
+subplot(2, 1, 1);
+plot(tAudioGS, y_giant_steps_MONO)
+hold on; 
+% Averaged (mono) original
+plot(tAudioGS, x_giant_steps_MONO) 
+xlabel('Time (s)'); ylabel('Amplitude'); axis tight;
+title('Original vs Bass-Boosted Waveforms of Giant Steps'); hold off;
+legend('Processed Waveform', 'Original Waveform');
+
+% Plot FT (half)
+subplot(2, 1, 2);
+plot(fGS, abs(yFS_giant_steps(1:floor(N/2)+1))); hold on; 
+plot(fGS, abs(xFS_giant_steps(1:floor(N/2)+1))); axis tight;
+xlabel('Frequency (Hz)'); ylabel('|X(f)|');
+title('FT of Original vs Bass-Boosted Waveforms of Giant Steps')
+legend('Processed Waveform', 'Original Waveform'); hold off;
+
+% Plot spectrogram (averaged mono audio)
+figure('Name', 'Spectrogram of Original vs Processed Giant Steps')
+subplot(2, 1, 1); spectrogram(x_giant_steps_MONO, 256, 200, 256, fs_giant_steps);
+title('Original Audio Signal'); clim([-150, -40])
+subplot(2, 1, 2); spectrogram(y_giant_steps_MONO, 256, 200, 256, fs_giant_steps);
+title('Processed Audio Signal'); clim([-150, -40])
+sgtitle('Spectrogram of Original vs Processed Giant Steps Audio')
+
+
+
+% (B) Space Station (treble cut) --> treble boost preset
+[num, den] = tfdata(H_total_treble, 'v'); % Get numerator/denominator
+tAudioSS = (0:length(x_space_station)-1)' / fs_space_station; % Time vector
+% Process w/ lsim
+y_space_stationL = lsim(num, den, x_space_station(:, 1), tAudioSS); 
+y_space_stationR = lsim(num, den, x_space_station(:, 2), tAudioSS); 
+y_space_station = [y_space_stationL, y_space_stationR];
+
+% Extract averaged (mono) audio signal for plotting
+x_space_station_MONO = (x_space_station(:, 1) + x_space_station(:, 2))/2;
+y_space_station_MONO = (y_space_station(:, 1) + y_space_station(:, 2))/2;
+
+% Get FT transform (for the first second)
+x_space_station_SNIP = x_space_station_MONO(1:fs_space_station);
+y_space_station_SNIP = y_space_station_MONO(1:fs_space_station);
+N = length(x_space_station_SNIP); 
+fSS = (0:floor(N/2))' * fs_space_station/N; % Extract only half (other half redundant)
+xFS_space_station = fft(x_space_station_SNIP); yFS_space_station = fft(y_space_station_SNIP);
+
+% Plot waveforms
+figure('Name', 'Original vs Treble-Boosted Waveforms + FFT of Space Station')
+% Averaged (mono) processed
+subplot(2, 1, 1);
+plot(tAudioSS, y_space_station_MONO)
+hold on; 
+% Averaged (mono) original
+plot(tAudioSS, x_space_station_MONO) 
+xlabel('Time (s)'); ylabel('Amplitude'); axis tight;
+title('Original vs Treble-Boosted Waveforms of Space Station'); hold off;
+legend('Processed Waveform', 'Original Waveform');
+
+% Plot FT (half)
+subplot(2, 1, 2);
+plot(fSS, abs(yFS_space_station(1:floor(N/2)+1))); hold on; 
+plot(fSS, abs(xFS_space_station(1:floor(N/2)+1))); axis tight;
+xlabel('Frequency (Hz)'); ylabel('|X(f)|');
+title('FT of Original vs Treble-Boosted Waveforms of Space Station')
+legend('Processed Waveform', 'Original Waveform'); hold off;
+
+% Plot spectrogram (averaged mono audio)
+figure('Name', 'Spectrogram of Original vs Processed Space Station')
+subplot(2, 1, 1); spectrogram(x_space_station_MONO, 256, 200, 256, fs_space_station);
+title('Original Audio Signal');
+subplot(2, 1, 2); spectrogram(y_space_station_MONO, 256, 200, 256, fs_space_station);
+title('Processed Audio Signal');
+sgtitle('Spectrogram of Original vs Processed Space Station Audio')
+
+
+% Listen to processed audios
+sound(y_giant_steps, fs_giant_steps)
+pause(15)
+sound(y_space_station, fs_space_station)
+pause(15)
