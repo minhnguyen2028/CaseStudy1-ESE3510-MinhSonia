@@ -270,6 +270,30 @@ pause(15)
 
 
 %% 7: Enhancing bird vocalizations 
-close all
-[filtersTEST, H_totalTEST] = audioEQ([10, 60, 240, 960, 3840, 15360, 92200], ...
-    [0.3, 0.5, 0.6, 0.6, 0.6, 0.5, 0.3], [1,4,2,0.8,1,1,1], 1, 1);
+
+% Note: created helper functions to redo entire process above
+
+% Load in bird audio
+[xBird, fsBird] = audioread("Wavs\SNR Recording 2026-02-15 08_58.wav");
+
+% Generate spectrogram to visualize frequencies
+windowLength = round(0.01 * fsBird);   % 10 ms window
+overlap = round(0.8 * windowLength);   % 80% overlap
+nfft = 1024;
+figure('Name', 'Spectrogram of Bird Vocalization Recording')
+spectrogram(xBird, windowLength, overlap, nfft, fsBird, 'yaxis');
+
+% Target 1: 3-3.5 kHz range 
+% > appears to contain series of short high-low chirps
+fc1 = [100, 500, 1000, 3250, 9000, 20000];  % center frequencies centered around 3.25 kHz
+Q1 = [0.001, 0.001, 0.01, 10, 0.01, 0.001];
+gains1 = [0.01, 0.01, 0.01, 10, 0.01, 0.01];
+
+% Generate equalizer
+[filters1, H_total1] = audioEQ(fc1, Q1, gains1, 1, 1);
+
+% Process signal
+y1 = processAudio(xBird, fsBird, H_total1, windowLength, overlap, nfft);
+% sound(y1, fsBird)
+
+% TODO: consider overtones; identify a few more birds

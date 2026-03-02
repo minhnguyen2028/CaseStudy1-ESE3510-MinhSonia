@@ -1,9 +1,13 @@
 %% Helper function: plotResponse
 % Generates plots for a given transfer function + input signal 
 % INPUTS: 
-%   -
+%   - fc: n-length vector of center frequencies to be used
+%   - filters: n-length cell array of transfer functions specifying each band filter
+%   - H_total: transfer function generated from given parameters (response) 
+%   - H_total_unity: trasnfer function generated from gain = 1
+%   - debug: Boolean; 1 to print debug info; 0 for nothing
 % OUTPUTS:
-%   - 
+%   - No returned values (only plots)
 
 function [] = plotResponse(fc, filters, H_total, H_total_unity, debug)
     figure('Name', 'Individual bands + Unity Equalizer');
@@ -18,9 +22,11 @@ function [] = plotResponse(fc, filters, H_total, H_total_unity, debug)
     bode(H_total_unity, '--');
     
     title('Frequency Response: Individual Bands and Unity');
-    legend([num2str(fc(1)), ' Hz'], [num2str(fc(2)), ' Hz'], [num2str(fc(3)), ' Hz'], ...
-           [num2str(fc(4)), ' Hz'], [num2str(fc(5)), ' Hz'], [num2str(fc(6)), ' Hz'], ...
-           [num2str(fc(7)), ' Hz'], 'Total System (Unity)')
+    allBand = cell(1, length(fc));
+    for i = 1:length(fc)
+        allBand{i} = [num2str(fc(i)), ' Hz'];
+    end
+    legend(allBand);
     hold off;
     
     % FIGURE 2: total summed response w/ provided custom gains
