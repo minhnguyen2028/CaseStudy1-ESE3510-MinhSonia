@@ -24,7 +24,7 @@ for i = 1:length(fc)
 end
 
 % Hz to rad/s conversion for CT transfer functions
-% --> Creates list of 5 values
+% --> Creates list of 7 values
 w0 = 2 * pi * fc;   % resonant frequency (2pif)
 beta = 2 * pi * bw; % bandwidth (R/L in series RLC circuit)
 
@@ -111,7 +111,7 @@ for i = 1:3
     f = logspace(log10(20), log10(20000), 2000);
     w = 2*pi*f;
     [mag, ~] = bode(H_tot, w);
-    magdB = round(20*log10(squeeze(mag)), 2); wdB = round(w/(2*pi), 1);
+    magdB = round(20*log10(squeeze(mag)), 2);
     % Audible human range: 20 Hz to 20 kHz
     idx = (f >= 20) & (f <= 20000);
     magAudible = magdB(idx);
@@ -160,7 +160,7 @@ for i = 1:length(fc)
     ylabel('Amplitude');
 end
 
-%% 6: Processing audio files w/ presets
+%% 6: Enhancing jazz audio clips w/ presets
 
 % Load audio files
 [x_giant_steps, fs_giant_steps] = audioread("Wavs\Giant Steps Bass Cut.wav");
@@ -212,7 +212,6 @@ title('Original Audio Signal'); clim([-150, -40])
 subplot(2, 1, 2); spectrogram(y_giant_steps_MONO, 256, 200, 256, fs_giant_steps);
 title('Processed Audio Signal'); clim([-150, -40])
 sgtitle('Spectrogram of Original vs Processed Giant Steps Audio')
-
 
 
 % (B) Space Station (treble cut) --> treble boost preset
@@ -268,3 +267,9 @@ sound(y_giant_steps, fs_giant_steps)
 pause(15)
 sound(y_space_station, fs_space_station)
 pause(15)
+
+
+%% 7: Enhancing bird vocalizations 
+close all
+[filtersTEST, H_totalTEST] = audioEQ([10, 60, 240, 960, 3840, 15360, 92200], ...
+    [0.3, 0.5, 0.6, 0.6, 0.6, 0.5, 0.3], [1,4,2,0.8,1,1,1], 1, 1);
