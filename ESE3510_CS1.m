@@ -3,7 +3,8 @@
 % * Authors: Minh Duc Nguyen, Sonia Palamand 
 % * Class: ESE 3510-01
 % * Date: Started - 2/20/26 ; Completed - 3/XX/26
-% * Contributions from: ______
+% * Contributions from: https://xeno-canto.org (repository of bird calls;
+% used for comparison/identification of bird species in the final task)
 close all
 
 %% 1: Center frequency and bandwidth for each frequency band
@@ -263,15 +264,15 @@ sgtitle('Spectrogram of Original vs Processed Space Station Audio')
 
 
 % Listen to processed audios
-sound(y_giant_steps, fs_giant_steps)
-pause(15)
-sound(y_space_station, fs_space_station)
-pause(15)
+% sound(y_giant_steps, fs_giant_steps)
+% pause(15)
+% sound(y_space_station, fs_space_station)
+% pause(15)
 
 
 %% 7: Enhancing bird vocalizations 
 
-% Note: created helper functions to redo entire process above
+% Note: created 3 helper functions to easily redo entire process above
 
 % Load in bird audio
 [xBird, fsBird] = audioread("Wavs\SNR Recording 2026-02-15 08_58.wav");
@@ -282,18 +283,63 @@ overlap = round(0.8 * windowLength);   % 80% overlap
 nfft = 1024;
 figure('Name', 'Spectrogram of Bird Vocalization Recording')
 spectrogram(xBird, windowLength, overlap, nfft, fsBird, 'yaxis');
+title('Spectrogram of Bird Vocalization Recording (Original)')
 
-% Target 1: 3-3.5 kHz range 
-% > appears to contain series of short high-low chirps
+% Compute energy of noise (wind; ~0-1000 Hz range) for comparison
+xNoise = bandpower(xBird, fsBird, [0, 1000]);
+
+%% TARGET 1: 3-3.5 kHz range (Blue Jay?)
+% > series of short high-pitched falling high-low chirps 
+%   (most prominent around 30 - 60 seconds in the recording)
 fc1 = [100, 500, 1000, 3250, 9000, 20000];  % center frequencies centered around 3.25 kHz
 Q1 = [0.001, 0.001, 0.01, 10, 0.01, 0.001];
-gains1 = [0.01, 0.01, 0.01, 10, 0.01, 0.01];
+gains1 = [0.01, 0.01, 0.01, 20, 0.01, 0.01];
+fRange1 = [3000, 3500];
 
 % Generate equalizer
 [filters1, H_total1] = audioEQ(fc1, Q1, gains1, 1, 1);
 
 % Process signal
-y1 = processAudio(xBird, fsBird, H_total1, windowLength, overlap, nfft);
-% sound(y1, fsBird)
+y1 = processAudio(xBird, fsBird, fRange1, H_total1, windowLength, overlap, nfft);
+% Play signal from 30 - 60 seconds)
+y1SNIP = y1(30*fsBird+1:60*fsBird);
+sound(y1SNIP, fsBird)
+pause(25)
 
-% TODO: consider overtones; identify a few more birds
+%% TARGET 2: 1.5 - 2.2 kHz range (Northern Cardinal?)
+% > series of short sequential low-high chirps
+%   (most prominent around 54 - 68 seconds in the recording) 
+fc2 = [100, 400, 1850, 4000, 11000, 20000];  % frequencies centered around 1.85 kHz
+Q2 = [0.001, 0.005, 9, 0.001, 0.001, 0.001];
+gains2 = [0.01, 0.01, 20, 0.01, 0.01, 0.01];
+fRange2 = [1500, 2200]; 
+
+% Generate equalizer
+[filters2, H_total2] = audioEQ(fc2, Q2, gains2, 1, 1);
+
+% Process signal
+y2 = processAudio(xBird, fsBird, fRange2, H_total2, windowLength, overlap, nfft);
+% Play signal from 54 - 68 seconds)
+y2SNIP = y2(54*fsBird+1:68*fsBird);
+sound(y2SNIP, fsBird)
+pause(10)
+
+%% Target 3: 2.5 - 3.2 kHz range (Unknown)
+% > short-lasting series of short chirps in quick succession
+%   (only present around 16-18 seconds) 
+fc3 = [100, 400, 2850, 5000, 12000, 22000];  % frequencies centered around 2.85 kHz
+Q3 = [0.001, 0.005, 10, 0.005, 0.001, 0.001];
+gains3 = [0.01, 0.01, 40, 0.01, 0.01, 0.01];
+fRange3 = [2500, 3200];
+
+% Generate equalizer
+[filters3, H_total3] = audioEQ(fc3, Q3, gains3, 1, 1);
+
+% Process signal
+y3 = processAudio(xBird, fsBird, fRange3, H_total3, windowLength, overlap, nfft);
+% Play signal from 16-18 seconds)
+y3SNIP = y3(16*fsBird+1:18*fsBird);
+sound(y3SNIP, fsBird)
+pause(2)
+
+%% Target 4: 

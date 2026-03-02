@@ -1,7 +1,15 @@
+%% Helper function: processAudio
+% Processes bird vocalization audio signal w/ a provided transfer function/filter
+% INPUTS: 
+%   - x: n-length (mono) audio signal vector to be processed
+%   - fs: sampling frequency of the audio signal
+%   - H_total: transfer function generated from given parameters (response) 
+%   - windowLength, overlap, nfft: parameters for the spectrogram
+% OUTPUTS:
+%   - No returned values (only plots)
 
 
-
-function y = processAudio(x, fs, H_total, windowLength, overlap, nfft)
+function y = processAudio(x, fs, fRange, H_total, windowLength, overlap, nfft)
     % Extract transfer function
     [num, den] = tfdata(H_total, 'v'); % Get numerator/denominator
     tAudio = (0:length(x)-1)' / fs; % Time vector
@@ -40,4 +48,19 @@ function y = processAudio(x, fs, H_total, windowLength, overlap, nfft)
     subplot(2, 1, 2); spectrogram(y, windowLength, overlap, nfft, fs, 'yaxis');
     title('Processed Audio Signal');
     sgtitle('Spectrogram of Original vs Processed Audio')
+
+    % Compare specified band energies
+    yEBefore = bandpower(x, fs, fRange);
+    yEAfter = bandpower(y, fs, fRange);
+    
+    % Compare signal-to-noise ratio improvement using low wind noise (~0-1 kHz) as reference noise
+    xNoise = bandpower(x, fs, [0, 1000]);
+    yNoise = bandpower(y, fs, [0, 1000]);
+    yRBefore = yEBefore/xNoise;
+    yRAfter = yEAfter/yNoise;
+    ySNR = 10*log10(yRAfter/yRBefore);
+    
+    disp(['TARGET [', num2str(fRange) ,'] Hz: Initial Energy: ', num2str(yEBefore), ...
+        ' | Processed Energy: ', num2str(yEAfter), ...
+        ' | SNR: ', num2str(ySNR), ' dB']);
 end
