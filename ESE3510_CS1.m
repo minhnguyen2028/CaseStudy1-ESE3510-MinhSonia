@@ -89,14 +89,14 @@ end
 
 % Total system response with unity gain 
 bode(H_total_unity, '--');
-
 title('Frequency Response: Individual Bands and Unity');
-legend([num2str(fc(1)), ' Hz (passive)'], [num2str(fc(2)), ' Hz'], [num2str(fc(3)), ' Hz'], ...
-       [num2str(fc(4)), ' Hz'], [num2str(fc(5)), ' Hz'], [num2str(fc(6)), ' Hz'], ...
-       [num2str(fc(7)), ' Hz (passive)'], 'Total System (Unity)')
 hold off;
 % Adjust y-limits
 axes_handles = findall(gcf, 'type', 'axes'); axes(axes_handles(3)); ylim([-120, 10]); 
+legend([num2str(fc(1)), ' Hz'], [num2str(fc(2)), ' Hz'], [num2str(fc(3)), ' Hz'], ...
+       [num2str(fc(4)), ' Hz'], [num2str(fc(5)), ' Hz'], [num2str(fc(6)), ' Hz'], ...
+       [num2str(fc(7)), ' Hz'], 'Unity')
+
 
 % FIGURE 2: comparing 3 presets (unity, bass boost, treble boost)
 
@@ -133,7 +133,7 @@ for i = 1:3
         'p-to-p = ', num2str(ptop, '%.2f'), ' dB'])
 end
 
-title('Overall Equalizer Settings: Unity, Bass Boost, Treble Boost');
+title('Overall Equalizer Response: Unity, Bass Boost, Treble Boost');
 legend('Unity', 'Bass Boost', 'Treble Boost');
 hold off;
 
@@ -202,17 +202,20 @@ legend('Processed Waveform', 'Original Waveform');
 % Plot FT (half)
 subplot(2, 1, 2);
 plot(fGS, abs(yFS_giant_steps(1:floor(N/2)+1))); hold on; 
-plot(fGS, abs(xFS_giant_steps(1:floor(N/2)+1))); axis tight;
+plot(fGS, abs(xFS_giant_steps(1:floor(N/2)+1))); axis tight; ylim([0, 565]); xlim([0, 20000]);
 xlabel('Frequency (Hz)'); ylabel('|X(f)|');
 title('FT of Original vs Bass-Boosted Waveforms of Giant Steps')
 legend('Processed Waveform', 'Original Waveform'); hold off;
 
 % Plot spectrogram (averaged mono audio)
 figure('Name', 'Spectrogram of Original vs Processed Giant Steps')
-subplot(2, 1, 1); spectrogram(x_giant_steps_MONO, 256, 200, 256, fs_giant_steps);
-title('Original Audio Signal'); clim([-150, -40])
-subplot(2, 1, 2); spectrogram(y_giant_steps_MONO, 256, 200, 256, fs_giant_steps);
-title('Processed Audio Signal'); clim([-150, -40])
+windowLength = round(0.01 * fs_giant_steps);   % 10 ms window
+overlap = round(0.8 * windowLength);   % 80% overlap
+nfft = 1024;
+subplot(2, 1, 1); spectrogram(x_giant_steps_MONO, windowLength, overlap, nfft, fs_giant_steps, 'yaxis');
+title('Original Audio Signal'); clim([-150, -40]); ylim([0, 2.5]);
+subplot(2, 1, 2); spectrogram(y_giant_steps_MONO, windowLength, overlap, nfft, fs_giant_steps, 'yaxis');
+title('Processed Audio Signal'); clim([-150, -40]); ylim([0, 2.5]);
 sgtitle('Spectrogram of Original vs Processed Giant Steps Audio')
 
 
@@ -250,17 +253,20 @@ legend('Processed Waveform', 'Original Waveform');
 % Plot FT (half)
 subplot(2, 1, 2);
 plot(fSS, abs(yFS_space_station(1:floor(N/2)+1))); hold on; 
-plot(fSS, abs(xFS_space_station(1:floor(N/2)+1))); axis tight;
+plot(fSS, abs(xFS_space_station(1:floor(N/2)+1))); axis tight; ylim([0, 2000]); xlim([0, 8000]);
 xlabel('Frequency (Hz)'); ylabel('|X(f)|');
 title('FT of Original vs Treble-Boosted Waveforms of Space Station')
 legend('Processed Waveform', 'Original Waveform'); hold off;
 
 % Plot spectrogram (averaged mono audio)
 figure('Name', 'Spectrogram of Original vs Processed Space Station')
-subplot(2, 1, 1); spectrogram(x_space_station_MONO, 256, 200, 256, fs_space_station);
-title('Original Audio Signal');
-subplot(2, 1, 2); spectrogram(y_space_station_MONO, 256, 200, 256, fs_space_station);
-title('Processed Audio Signal');
+windowLength = round(0.01 * fs_space_station);   % 10 ms window
+overlap = round(0.8 * windowLength);   % 80% overlap
+nfft = 1024;
+subplot(2, 1, 1); spectrogram(x_space_station_MONO, windowLength, overlap, nfft, fs_space_station, 'yaxis');
+title('Original Audio Signal'); ylim([0, 15]);
+subplot(2, 1, 2); spectrogram(y_space_station_MONO, windowLength, overlap, nfft, fs_space_station, 'yaxis');
+title('Processed Audio Signal'); ylim([0, 15]);
 sgtitle('Spectrogram of Original vs Processed Space Station Audio')
 
 
@@ -293,8 +299,8 @@ xNoise = bandpower(xBird, fsBird, [0, 1000]);
 % > series of short high-pitched falling high-low chirps 
 %   (most prominent around 30 - 60 seconds in the recording; reoccuring)
 fc1 = [100, 600, 2000, 3250, 9000, 20000];  % center frequencies centered around 3.25 kHz
-Q1 = [0.001, 0.001, 0.01, 7, 0.01, 0.001];
-gains1 = [0.01, 0.01, 0.01, 10, 0.01, 0.01];
+Q1 = [0.01, 0.01, 0.01, 7, 0.01, 0.01];
+gains1 = [0.01, 0.01, 0.01, 20, 0.01, 0.01];
 fRange1 = [3000, 3500];
 
 % Generate equalizer
@@ -310,7 +316,7 @@ y1SNIP = y1(30*fsBird+1:60*fsBird);
 %   (most prominent around 54 - 68 seconds in the recording; reoccuring) 
 fc2 = [100, 400, 1850, 4000, 11000, 20000];  % frequencies centered around 1.85 kHz
 Q2 = [0.01, 0.1, 7, 0.1, 0.01, 0.01];
-gains2 = [0.01, 0.01, 10, 0.01, 0.01, 0.01];
+gains2 = [0.01, 0.01, 20, 0.01, 0.01, 0.01];
 fRange2 = [1500, 2200]; 
 
 % Generate equalizer
@@ -324,9 +330,9 @@ y2SNIP = y2(54*fsBird+1:68*fsBird);
 %% Target 3: 1.5 - 2 kHz range (???)
 % > short-lasting series of mostly single-tone calls in 2-syllable pairs 
 %   (only present around 76-82 seconds; mostly isolated) 
-fc3 = [100, 500, 1750, 2500, 8000, 20000];  % frequencies centered around 1.75 kHz
-Q3 = [0.001, 0.001, 10, 0.0005, 0.001, 0.001];
-gains3 = [0.01, 0.01, 30, 0.01, 0.01, 0.01];
+fc3 = [100, 500, 1750, 2300, 8000, 20000];  % frequencies centered around 1.75 kHz
+Q3 = [0.01, 0.01, 10, 0.01, 0.01, 0.01];
+gains3 = [0.01, 0.001, 20, 0.001, 0.01, 0.01];
 fRange3 = [1500, 2000];
 
 % Generate equalizer
@@ -337,20 +343,19 @@ y3 = processAudio(xBird, fsBird, fRange3, H_total3, windowLength, overlap, nfft,
 % Truncate signal from 16-18 seconds)
 y3SNIP = y3(76*fsBird+1:82*fsBird);
 
-
 %% Target 4: 3 - 3.5 kHz range (Carolina Wren?)
 % > series of very short high-low evenly-spaced chirps in quick succession
 %   (most prominent around 51.5 - 54.5 seconds in the recording; reoccuring)
 fc4 = [100, 600, 2500, 3250, 8000, 20000];  % frequencies centered around 3250 kHz
-Q4 = [0.001, 0.001, 0.001, 20, 0.001, 0.001];
-gains4 = [0.01, 0.01, 0.001, 30, 0.01, 0.01];
+Q4 = [0.01, 0.01, 0.01, 10, 0.01, 0.01];
+gains4 = [0.01, 0.001, 0.001, 30, 0.001, 0.01];
 fRange4 = [3000, 3500];
 
 % Generate equalizer
 [~, H_total4] = audioEQ(fc4, Q4, gains4, 1, 1);
 
-% Process signal 
-y4 = processAudio(xBird, fsBird, fRange4, H_total4, windowLength, overlap, nfft, 1, [0.86, 0.91, 2.8, 3.7]);
+% Process signal (not cascaded; too much high-pitched ringing otherwise)
+y4 = processAudio(xBird, fsBird, fRange4, H_total4, windowLength, overlap, nfft, 1, [0.86, 0.91, 2.8, 3.7], 1);
 y4SNIP = y4(51.5*fsBird+1:54.5*fsBird);
 
 
@@ -358,7 +363,7 @@ y4SNIP = y4(51.5*fsBird+1:54.5*fsBird);
 % > series of fast lower-pitched warbling
 %   (prominent around 42 - 43.5 seconds in the recording; reoccuring but messy/mixed)
 fc5 = [100, 600, 2400, 3000, 8000, 20000]; % frequencies centered around 2.4 kHz
-Q5 = [0.1, 0.1, 5, 0.001, 0.1, 0.1];
+Q5 = [0.1, 0.1, 5, 0.01, 0.1, 0.1];
 gains5 = [0.01, 0.01, 15, 0.001, 0.01, 0.01];
 fRange5 = [2000, 2800];
 
@@ -366,14 +371,14 @@ fRange5 = [2000, 2800];
 [~, H_total5] = audioEQ(fc5, Q5, gains5, 1, 1); 
 
 % Process signal
-y5 = processAudio(xBird, fsBird, fRange5, H_total5, windowLength, overlap, nfft, 1, [0.7 0.75 2 3], 0);
+y5 = processAudio(xBird, fsBird, fRange5, H_total5, windowLength, overlap, nfft, 1, [0.7 0.75 2 3], 1);
 y5SNIP = y5(42*fsBird+1:43.5*fsBird);
 
 %% Target 6: 2.2 - 3 kHz (???)
 % > series of low-pitched "honk-like" chirps (like a squeaky toy)
 %   (prominent around 16 - 30 seconds; reoccuring in the first half)
-fc6 = [100, 500, 2600, 4000, 9000, 20000]; % frequencies centered around 2.65 kHz
-Q6 = [0.1, 0.1, 10, 0.1, 0.1, 0.1];
+fc6 = [100, 500, 2650, 4000, 9000, 20000]; % frequencies centered around 2.65 kHz
+Q6 = [0.01, 0.1, 7, 0.1, 0.1, 0.1]; % Wider Q --> more "vertical" bands
 gains6 = [0.0001, 0.01, 20, 0.001, 0.001, 0.01];
 fRange6 = [2200, 3000];
 
@@ -381,22 +386,22 @@ fRange6 = [2200, 3000];
 [~, H_total6] = audioEQ(fc6, Q6, gains6, 1, 1); 
 
 % Process signal 
-y6 = processAudio(xBird, fsBird, fRange6, H_total6, windowLength, overlap, nfft, 1, [0.26 0.5 2 3.1]);
+y6 = processAudio(xBird, fsBird, fRange6, H_total6, windowLength, overlap, nfft, 1, [0.26 0.5 2 3.1], 1);
 y6SNIP = y6(16*fsBird+1:30*fsBird);
 
 %% Target 7: 2 - 3 kHz (???)
 % > series of rapid triplet low-high-low slurred whistles 
-%   (prominent around 50 - 54 seconds; reoccuring in the middle-ish)
+%   (prominent around 50 - 54 seconds; reoccuring in the middle-ish section)
 fc7 = [100, 600, 2200, 2800, 6000, 20000]; % frequencies centered at 2.2 & 2.8 kHz peaks
 Q7 = [0.1, 0.01, 10, 10, 0.01, 0.1];
-gains7 = [0.001, 0.01, 20, 20, 0.001, 0.01];
+gains7 = [0.001, 0.01, 20, 14, 0.001, 0.01];
 fRange7 = [2000, 3000];
 
 % Generate equalizer
 [~, H_total7] = audioEQ(fc7, Q7, gains7, 1, 1); 
 
 % Process signal 
-y7 = processAudio(xBird, fsBird, fRange7, H_total7, windowLength, overlap, nfft, 1, [0.83 0.9 1.9 3.1]);
+y7 = processAudio(xBird, fsBird, fRange7, H_total7, windowLength, overlap, nfft, 1, [0.83 0.9 1.9 3.1], 1);
 y7SNIP = y7(50*fsBird+1:54*fsBird);
 
 
