@@ -4,7 +4,8 @@
 % * Class: ESE 3510-01
 % * Date: Started - 2/20/26 ; Completed - 3/XX/26
 % * Contributions from: https://xeno-canto.org (repository of bird calls;
-% used for comparison/identification of bird species in the final task)
+% used for comparison/identification of bird species in the final task) ; 
+% https://www.allaboutbirds.org/ (same reason as previous) ; 
 close all
 
 %% 1: Center frequency and bandwidth for each frequency band
@@ -288,58 +289,117 @@ title('Spectrogram of Bird Vocalization Recording (Original)')
 % Compute energy of noise (wind; ~0-1000 Hz range) for comparison
 xNoise = bandpower(xBird, fsBird, [0, 1000]);
 
-%% TARGET 1: 3-3.5 kHz range (Blue Jay?)
+%% TARGET 1: 3-3.5 kHz range (Blue Jay)
 % > series of short high-pitched falling high-low chirps 
-%   (most prominent around 30 - 60 seconds in the recording)
-fc1 = [100, 500, 1000, 3250, 9000, 20000];  % center frequencies centered around 3.25 kHz
-Q1 = [0.001, 0.001, 0.01, 10, 0.01, 0.001];
-gains1 = [0.01, 0.01, 0.01, 20, 0.01, 0.01];
+%   (most prominent around 30 - 60 seconds in the recording; reoccuring)
+fc1 = [100, 600, 2000, 3250, 9000, 20000];  % center frequencies centered around 3.25 kHz
+Q1 = [0.001, 0.001, 0.01, 7, 0.01, 0.001];
+gains1 = [0.01, 0.01, 0.01, 10, 0.01, 0.01];
 fRange1 = [3000, 3500];
 
 % Generate equalizer
-[filters1, H_total1] = audioEQ(fc1, Q1, gains1, 1, 1);
+[~, H_total1] = audioEQ(fc1, Q1, gains1, 1, 1);
 
-% Process signal
-y1 = processAudio(xBird, fsBird, fRange1, H_total1, windowLength, overlap, nfft);
-% Play signal from 30 - 60 seconds)
+% Process signal (cascaded once)
+y1 = processAudio(xBird, fsBird, fRange1, H_total1, windowLength, overlap, nfft, 1, [0.5, 1, 2.8, 3.7], 1);
+% Truncate signal from 30 - 60 seconds)
 y1SNIP = y1(30*fsBird+1:60*fsBird);
-sound(y1SNIP, fsBird)
-pause(25)
 
-%% TARGET 2: 1.5 - 2.2 kHz range (Northern Cardinal?)
+%% TARGET 2: 1.5 - 2.2 kHz range (Northern Cardinal/Tufted Titmouse?)
 % > series of short sequential low-high chirps
-%   (most prominent around 54 - 68 seconds in the recording) 
+%   (most prominent around 54 - 68 seconds in the recording; reoccuring) 
 fc2 = [100, 400, 1850, 4000, 11000, 20000];  % frequencies centered around 1.85 kHz
-Q2 = [0.001, 0.005, 9, 0.001, 0.001, 0.001];
-gains2 = [0.01, 0.01, 20, 0.01, 0.01, 0.01];
+Q2 = [0.01, 0.1, 7, 0.1, 0.01, 0.01];
+gains2 = [0.01, 0.01, 10, 0.01, 0.01, 0.01];
 fRange2 = [1500, 2200]; 
 
 % Generate equalizer
-[filters2, H_total2] = audioEQ(fc2, Q2, gains2, 1, 1);
+[~, H_total2] = audioEQ(fc2, Q2, gains2, 1, 1);
 
-% Process signal
-y2 = processAudio(xBird, fsBird, fRange2, H_total2, windowLength, overlap, nfft);
-% Play signal from 54 - 68 seconds)
+% Process signal (cascaded once)
+y2 = processAudio(xBird, fsBird, fRange2, H_total2, windowLength, overlap, nfft, 1, [0.9 1.2 1.3 2.4], 1);
+% Truncate signal from 54 - 68 seconds)
 y2SNIP = y2(54*fsBird+1:68*fsBird);
-sound(y2SNIP, fsBird)
-pause(10)
 
-%% Target 3: 2.5 - 3.2 kHz range (Unknown)
-% > short-lasting series of short chirps in quick succession
-%   (only present around 16-18 seconds) 
-fc3 = [100, 400, 2850, 5000, 12000, 22000];  % frequencies centered around 2.85 kHz
-Q3 = [0.001, 0.005, 10, 0.005, 0.001, 0.001];
-gains3 = [0.01, 0.01, 40, 0.01, 0.01, 0.01];
-fRange3 = [2500, 3200];
+%% Target 3: 1.5 - 2 kHz range (???)
+% > short-lasting series of mostly single-tone calls in 2-syllable pairs 
+%   (only present around 76-82 seconds; mostly isolated) 
+fc3 = [100, 500, 1750, 2500, 8000, 20000];  % frequencies centered around 1.75 kHz
+Q3 = [0.001, 0.001, 10, 0.0005, 0.001, 0.001];
+gains3 = [0.01, 0.01, 30, 0.01, 0.01, 0.01];
+fRange3 = [1500, 2000];
 
 % Generate equalizer
-[filters3, H_total3] = audioEQ(fc3, Q3, gains3, 1, 1);
+[~, H_total3] = audioEQ(fc3, Q3, gains3, 1, 1);
+
+% Process signal (cascaded to filter out unwanted 2.25-3 kHz additional bird call)
+y3 = processAudio(xBird, fsBird, fRange3, H_total3, windowLength, overlap, nfft, 1, [1.2 1.4 1.3 2.2], 1);
+% Truncate signal from 16-18 seconds)
+y3SNIP = y3(76*fsBird+1:82*fsBird);
+
+
+%% Target 4: 3 - 3.5 kHz range (Carolina Wren?)
+% > series of very short high-low evenly-spaced chirps in quick succession
+%   (most prominent around 51.5 - 54.5 seconds in the recording; reoccuring)
+fc4 = [100, 600, 2500, 3250, 8000, 20000];  % frequencies centered around 3250 kHz
+Q4 = [0.001, 0.001, 0.001, 20, 0.001, 0.001];
+gains4 = [0.01, 0.01, 0.001, 30, 0.01, 0.01];
+fRange4 = [3000, 3500];
+
+% Generate equalizer
+[~, H_total4] = audioEQ(fc4, Q4, gains4, 1, 1);
+
+% Process signal 
+y4 = processAudio(xBird, fsBird, fRange4, H_total4, windowLength, overlap, nfft, 1, [0.86, 0.91, 2.8, 3.7]);
+y4SNIP = y4(51.5*fsBird+1:54.5*fsBird);
+
+
+%% Target 5: 2 - 2.8 kHz (Eastern Bluebird?)
+% > series of fast lower-pitched warbling
+%   (prominent around 42 - 43.5 seconds in the recording; reoccuring but messy/mixed)
+fc5 = [100, 600, 2400, 3000, 8000, 20000]; % frequencies centered around 2.4 kHz
+Q5 = [0.1, 0.1, 5, 0.001, 0.1, 0.1];
+gains5 = [0.01, 0.01, 15, 0.001, 0.01, 0.01];
+fRange5 = [2000, 2800];
+
+% Generate equalizer
+[~, H_total5] = audioEQ(fc5, Q5, gains5, 1, 1); 
 
 % Process signal
-y3 = processAudio(xBird, fsBird, fRange3, H_total3, windowLength, overlap, nfft);
-% Play signal from 16-18 seconds)
-y3SNIP = y3(16*fsBird+1:18*fsBird);
-sound(y3SNIP, fsBird)
-pause(2)
+y5 = processAudio(xBird, fsBird, fRange5, H_total5, windowLength, overlap, nfft, 1, [0.7 0.75 2 3], 0);
+y5SNIP = y5(42*fsBird+1:43.5*fsBird);
 
-%% Target 4: 
+%% Target 6: 2.2 - 3 kHz (???)
+% > series of low-pitched "honk-like" chirps (like a squeaky toy)
+%   (prominent around 16 - 30 seconds; reoccuring in the first half)
+fc6 = [100, 500, 2600, 4000, 9000, 20000]; % frequencies centered around 2.65 kHz
+Q6 = [0.1, 0.1, 10, 0.1, 0.1, 0.1];
+gains6 = [0.0001, 0.01, 20, 0.001, 0.001, 0.01];
+fRange6 = [2200, 3000];
+
+% Generate equalizer
+[~, H_total6] = audioEQ(fc6, Q6, gains6, 1, 1); 
+
+% Process signal 
+y6 = processAudio(xBird, fsBird, fRange6, H_total6, windowLength, overlap, nfft, 1, [0.26 0.5 2 3.1]);
+y6SNIP = y6(16*fsBird+1:30*fsBird);
+
+%% Target 7: 2 - 3 kHz (???)
+% > series of rapid triplet low-high-low slurred whistles 
+%   (prominent around 50 - 54 seconds; reoccuring in the middle-ish)
+fc7 = [100, 600, 2200, 2800, 6000, 20000]; % frequencies centered at 2.2 & 2.8 kHz peaks
+Q7 = [0.1, 0.01, 10, 10, 0.01, 0.1];
+gains7 = [0.001, 0.01, 20, 20, 0.001, 0.01];
+fRange7 = [2000, 3000];
+
+% Generate equalizer
+[~, H_total7] = audioEQ(fc7, Q7, gains7, 1, 1); 
+
+% Process signal 
+y7 = processAudio(xBird, fsBird, fRange7, H_total7, windowLength, overlap, nfft, 1, [0.83 0.9 1.9 3.1]);
+y7SNIP = y7(50*fsBird+1:54*fsBird);
+
+
+
+
+
