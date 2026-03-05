@@ -5,7 +5,7 @@
 % * Date: Started - 2/20/26 ; Completed - 3/XX/26
 % * Contributions from: https://xeno-canto.org (repository of bird calls;
 % used for comparison/identification of bird species in the final task) ; 
-% https://www.allaboutbirds.org/ (same reason as previous) ; 
+% https://www.allaboutbirds.org/ (same reason as previous)
 close all
 
 %% 1: Center frequency and bandwidth for each frequency band
@@ -155,12 +155,13 @@ for i = 1:length(fc)
     h_i = lsim(num_i, den_i, x_imp, t);
     
     % Stacked subplot
-    subplot(length(fc), 1, i);
+    subplot(4, 2, i);
     plot(t, h_i);
-    title(['Impulse Response of Band ', num2str(i), ' (', num2str(fc(i)), ' Hz)']);
+    title(['Band ', num2str(i), ' (', num2str(fc(i)), ' Hz)']);
     xlabel('Time (seconds)');
     ylabel('Amplitude');
 end
+sgtitle('Impulse Responses of Baseline System')
 
 %% 6: Enhancing jazz audio clips w/ presets
 
@@ -307,7 +308,7 @@ fRange1 = [3000, 3500];
 [~, H_total1] = audioEQ(fc1, Q1, gains1, 1, 1);
 
 % Process signal (cascaded once)
-y1 = processAudio(xBird, fsBird, fRange1, H_total1, windowLength, overlap, nfft, 1, [0.5, 1, 2.8, 3.7], 1);
+y1 = processAudio(xBird, fsBird, fRange1, H_total1, windowLength, overlap, nfft, 1, [0.5, 1, 0, 3.7], 1);
 % Truncate signal from 30 - 60 seconds)
 y1SNIP = y1(30*fsBird+1:60*fsBird);
 
@@ -324,7 +325,6 @@ fRange2 = [1500, 2200];
 
 % Process signal (cascaded once)
 y2 = processAudio(xBird, fsBird, fRange2, H_total2, windowLength, overlap, nfft, 1, [0.9 1.2 1.3 2.4], 1);
-% Truncate signal from 54 - 68 seconds)
 y2SNIP = y2(54*fsBird+1:68*fsBird);
 
 %% Target 3: 1.5 - 2 kHz range (???)
@@ -340,7 +340,6 @@ fRange3 = [1500, 2000];
 
 % Process signal (cascaded to filter out unwanted 2.25-3 kHz additional bird call)
 y3 = processAudio(xBird, fsBird, fRange3, H_total3, windowLength, overlap, nfft, 1, [1.2 1.4 1.3 2.2], 1);
-% Truncate signal from 16-18 seconds)
 y3SNIP = y3(76*fsBird+1:82*fsBird);
 
 %% Target 4: 3 - 3.5 kHz range (Carolina Wren?)
@@ -403,8 +402,3 @@ fRange7 = [2000, 3000];
 % Process signal 
 y7 = processAudio(xBird, fsBird, fRange7, H_total7, windowLength, overlap, nfft, 1, [0.83 0.9 1.9 3.1], 1);
 y7SNIP = y7(50*fsBird+1:54*fsBird);
-
-
-
-
-
