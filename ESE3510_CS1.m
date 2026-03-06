@@ -2,10 +2,12 @@
 %%
 % * Authors: Minh Duc Nguyen, Sonia Palamand 
 % * Class: ESE 3510-01
-% * Date: Started - 2/20/26 ; Completed - 3/XX/26
+% * Date: Started - 2/20/26 ; Completed/Submitted - 3/06/26
 % * Contributions from: https://xeno-canto.org (repository of bird calls;
 % used for comparison/identification of bird species in the final task) ; 
-% https://www.allaboutbirds.org/ (same reason as previous)
+% https://www.allaboutbirds.org/ (same reason as previous) ; 
+% https://www.izotope.com/en/learn/signal-to-noise-ratio (referenced for
+% understanding logic/use case of SNR) 
 close all
 
 %% 1: Center frequency and bandwidth for each frequency band

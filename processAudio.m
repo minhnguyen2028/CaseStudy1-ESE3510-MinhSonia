@@ -13,6 +13,10 @@
 
 
 function y = processAudio(x, fs, fRange, H_total, windowLength, overlap, nfft, doPlot, limits, doCascade)
+    if ~nargin  % publishing misc
+        return
+    end
+
     xOrig = x;  % Store original signal
 
     % Cascade (if positive)

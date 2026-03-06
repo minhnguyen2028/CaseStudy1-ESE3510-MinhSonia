@@ -10,6 +10,10 @@
 %   - No returned values (only plots)
 
 function [] = plotResponse(fc, filters, H_total, H_total_unity, debug)
+    if ~nargin  % publishing misc
+        return
+    end
+
     figure('Name', 'Individual bands + Unity Equalizer');
     hold on;
     
@@ -83,7 +87,7 @@ function [] = plotResponse(fc, filters, H_total, H_total_unity, debug)
         h_i = lsim(num_i, den_i, x_imp, t);
         
         % Stacked subplot
-        subplot(length(fc), 1, i);
+        subplot(3, 2, i);
         plot(t, h_i);
         title(['Impulse Response of Band ', num2str(i), ' (', num2str(fc(i)), ' Hz)']);
         xlabel('Time (seconds)');

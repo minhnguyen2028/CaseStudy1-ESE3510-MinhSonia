@@ -11,6 +11,10 @@
 %   - H_total: transfer function generated from given parameters (response) 
 
 function [filters, H_total] = audioEQ(fc, Q, gains, debug, makePlot)
+    if ~nargin  % publishing misc
+        return
+    end
+
     % Bandwidth
     bw = fc./Q;
     
